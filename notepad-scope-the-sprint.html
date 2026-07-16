@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scope the Sprint</title>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  NOTEPAD — SCOPE THE SPRINT — DISCO UI                       ║
+  ╚══════════════════════════════════════════════════════════════╝
+
+  Reskin of the Sales Pathway "notepad-sprint-reminders.html".
+  Same shell and tab mechanic; content updated for Module 3 of the
+  Leadership Pathway.
+
+  EMBEDDING IN AN IFRAME
+    <iframe src="notepad-scope-the-sprint.html" width="100%" height="400"
+            frameborder="0" allowtransparency="true"></iframe>
+
+  EDITING CONTENT
+  Update the `notes` array in the <script> block to change
+  eyebrow labels, titles, or body copy.
+
+  ADDING MORE ITEMS
+  1. Add an entry to the `notes` array.
+  2. Add a corresponding <button> in .tab-strip.
+  3. Update all eyebrow labels to reflect the new total.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: unset;
+    padding: 28px 20px 36px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 620px;
+  }
+
+  /* ── Outer notepad wrapper ────────────────────────────── */
+  .notepad-wrap {
+    background: #f9fafb;
+    border-radius: 16px;
+    padding: 12px;
+  }
+
+  /* ── Notepad shell ───────────────────────────────────── */
+  .notepad {
+    display: flex;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    min-height: 260px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.08);
+  }
+
+  /* ── Tab strip ───────────────────────────────────────── */
+  .tab-strip {
+    width: 68px;
+    flex-shrink: 0;
+    background: #f9fafb;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tab-btn {
+    font-family: 'Inter', sans-serif;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 10px 6px;
+    transition: background 0.2s;
+  }
+
+  .tab-btn:not(:last-child) {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .tab-num {
+    font-size: 24px;
+    font-weight: 600;
+    color: #d1d5db;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .tab-btn.active {
+    background: #ffffff;
+  }
+
+  .tab-btn.active .tab-num {
+    color: #2563eb;
+  }
+
+  .tab-btn:hover:not(.active) {
+    background: #f3f4f6;
+  }
+
+  /* ── Content area ────────────────────────────────────── */
+  .content-area {
+    flex: 1;
+    padding: 24px 24px 24px 20px;
+    border-left: 3px solid #2563eb;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='28'%3E%3Cline x1='0' y1='27.5' x2='10' y2='27.5' stroke='%23e5e7eb' stroke-width='0.5'/%3E%3C/svg%3E");
+    background-size: 100% 28px;
+    background-repeat: repeat;
+  }
+
+  /* ── Content typography ──────────────────────────────── */
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #2563eb;
+  }
+
+  .note-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.35;
+  }
+
+  .note-body {
+    font-size: 14px;
+    line-height: 1.75;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+
+  /* ── Mobile ──────────────────────────────────────────── */
+  .container.is-mobile .tab-num { font-size: 20px; }
+  .container.is-mobile .content-area { padding: 20px 16px 20px 16px; }
+
+  /* ── Launch button ── */
+  .launch-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+  }
+
+  .launch-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: #9ca3af;
+    background: none;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 50px;
+    padding: 5px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+  }
+
+  .launch-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+  }
+
+  .launch-icon {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+<div class="container" id="container">
+  <!-- ── Launch button ──────────────────────────────────────────────────────
+       Update the href below once the file is hosted for the Leadership
+       Pathway build.
+       ───────────────────────────────────────────────────────────────────── -->
+  <div class="launch-bar">
+    <a class="launch-btn"
+       href="notepad-scope-the-sprint.html?standalone=true"
+       target="_blank"
+       rel="noopener noreferrer">
+      <svg class="launch-icon" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M8 1h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M11 1L6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      Open in new window
+    </a>
+  </div>
+
+  <div class="notepad-wrap">
+    <div class="notepad">
+
+      <div class="tab-strip">
+        <button class="tab-btn active" id="tab-0" onclick="showNote(0)">
+          <span class="tab-num">1</span>
+        </button>
+        <button class="tab-btn" id="tab-1" onclick="showNote(1)">
+          <span class="tab-num">2</span>
+        </button>
+        <button class="tab-btn" id="tab-2" onclick="showNote(2)">
+          <span class="tab-num">3</span>
+        </button>
+      </div>
+
+      <div class="content-area" id="content"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Hide the launch button when the page is opened in a new window.
+  // The launch button link appends ?standalone=true to the URL, which
+  // triggers this check. Remove or change the parameter name below if needed.
+  if (new URLSearchParams(window.location.search).get('standalone') === 'true') {
+    document.querySelector('.launch-bar').style.display = 'none';
+  }
+
+  const notes = [
+    {
+      eyebrow: 'Principle 1 of 3',
+      title:   'One Variable',
+      body:    'Just change one thing. If you simultaneously shift how you run meetings and how you delegate work, you will not be able to tell which change produced which result.'
+    },
+    {
+      eyebrow: 'Principle 2 of 3',
+      title:   'Observable Indicators',
+      body:    'Your success criteria need to be things you can actually see or measure. "My team feels more psychologically safe" is not observable. "Team members raised at least two concerns or dissenting views in team meetings this week without being prompted" is.'
+    },
+    {
+      eyebrow: 'Principle 3 of 3',
+      title:   'Realistic Volume',
+      body:    'Your sprint should involve enough interactions to generate a signal, typically four to six relevant situations or conversations over the two weeks. If your sprint involves feedback conversations, plan for at least four. If it involves delegation, identify at least two or three specific handoffs to approach differently.'
+    }
+  ];
+
+  const content = document.getElementById('content');
+  const tabs    = [
+    document.getElementById('tab-0'),
+    document.getElementById('tab-1'),
+    document.getElementById('tab-2')
+  ];
+
+  function showNote(i) {
+    tabs.forEach((t, j) => t.classList.toggle('active', j === i));
+    const n = notes[i];
+    content.innerHTML = `
+      <p class="eyebrow">${n.eyebrow}</p>
+      <p class="note-title">${n.title}</p>
+      <p class="note-body">${n.body}</p>`;
+  }
+
+  showNote(0);
+
+  const container = document.getElementById('container');
+  function applyLayout() {
+    container.classList.toggle('is-mobile', container.offsetWidth < 480);
+  }
+  window.addEventListener('resize', applyLayout);
+  applyLayout();
+</script>
+</body>
+</html>
