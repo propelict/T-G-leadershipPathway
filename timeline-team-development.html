@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<!--
+  Stages of Team Development — Disco UI
+  Recommended iframe size: 660 × 620 px
+  File name: timeline-team-development.html
+
+  Adapted from the Sales Pathway "timeline-sales-pipeline.html".
+  Same zig-zag timeline/node/card mechanic and nav controls. The
+  sales version's Closed-stage Won/Lost outcome buttons and "next
+  action" panel were dropped, since Tuckman's stages don't branch
+  the way a pipeline does; in their place each card reveals a
+  second block, "Founder's role at this stage," alongside the
+  stage description.
+
+  EMBEDDING IN AN IFRAME
+    <iframe src="timeline-team-development.html" width="100%" height="620"
+            frameborder="0" allowtransparency="true"></iframe>
+
+  EDITING CONTENT
+  All content is in the STAGES array near the top of the <script>
+  block. Each stage has: name, lbl, side, desc, role, icon.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stages of Team Development</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #ffffff;
+      color: #111827;
+      min-height: unset;
+      align-items: flex-start;
+    }
+
+    #pw {
+      max-width: 660px;
+      margin: 0 auto;
+      padding: 24px 16px 0;
+    }
+
+    /* Mobile layout via container-width JS */
+    #pw.is-mobile .stage-spacer { display: none; }
+    #pw.is-mobile .stage-row { justify-content: flex-start; }
+    #pw.is-mobile .stage-row.right > *:nth-child(1),
+    #pw.is-mobile .stage-row.left  > *:nth-child(1) { display: none; }
+    #pw.is-mobile .s-card { width: calc(100% - 64px); }
+
+    /* ── Counter ─────────────────────────────────────── */
+    .stage-counter {
+      font-size: 10px; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; color: #9ca3af;
+      text-align: center; margin-bottom: 20px;
+    }
+
+    /* ── Timeline spine ──────────────────────────────── */
+    .timeline { position: relative; padding-bottom: 4px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 50%; top: 14px; bottom: 14px;
+      width: 2px; background: #e5e7eb; transform: translateX(-50%);
+      border-radius: 2px; z-index: 0;
+    }
+    #pw.is-mobile .timeline::before { left: 14px; }
+
+    .tl-fill {
+      position: absolute; left: 50%; top: 14px; width: 2px;
+      background: #2563eb; transform: translateX(-50%);
+      border-radius: 2px; z-index: 1; height: 0;
+      transition: height .55s cubic-bezier(.22,1,.36,1);
+    }
+    #pw.is-mobile .tl-fill { left: 14px; }
+
+    /* ── Stage rows ──────────────────────────────────── */
+    .stage-row {
+      display: flex; align-items: center;
+      position: relative; margin-bottom: 16px; min-height: 72px;
+    }
+
+    .stage-row.right > *:nth-child(1) { order: 0; }
+    .stage-row.right > *:nth-child(2) { order: 1; }
+    .stage-row.right > *:nth-child(3) { order: 2; }
+    .stage-row.right > *:nth-child(4) { order: 3; }
+    .stage-row.right > *:nth-child(5) { order: 4; }
+
+    .stage-row.left  > *:nth-child(1) { order: 4; }
+    .stage-row.left  > *:nth-child(2) { order: 3; }
+    .stage-row.left  > *:nth-child(3) { order: 2; }
+    .stage-row.left  > *:nth-child(4) { order: 1; }
+    .stage-row.left  > *:nth-child(5) { order: 0; }
+
+    .stage-spacer { width: calc(50% - 38px); flex-shrink: 0; }
+
+    /* ── Connectors ──────────────────────────────────── */
+    .s-conn {
+      width: 24px; height: 2px; flex-shrink: 0;
+      background: #e5e7eb; z-index: 2; position: relative;
+      transition: background .35s;
+    }
+    .stage-row.done   .s-conn,
+    .stage-row.active .s-conn { background: #2563eb; }
+
+    /* ── Node ────────────────────────────────────────── */
+    .s-node {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: #ffffff; border: 2px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 3; position: relative; color: #9ca3af;
+      transition: background .3s, border-color .3s, box-shadow .3s,
+                  transform .3s cubic-bezier(.22,1,.36,1);
+    }
+    .stage-row.done   .s-node,
+    .stage-row.active .s-node { background: #2563eb; border-color: #2563eb; color: #ffffff; }
+    .stage-row.active .s-node {
+      box-shadow: 0 0 0 5px rgba(37,99,235,.15);
+      transform: scale(1.18);
+    }
+
+    /* ── Card ────────────────────────────────────────── */
+    .s-card {
+      width: calc(50% - 38px); flex-shrink: 0;
+      background: #ffffff; border: 1.5px solid #e5e7eb;
+      border-radius: 16px; padding: 12px 14px;
+      cursor: pointer; z-index: 2; position: relative;
+      transition: border-color .3s, box-shadow .3s, transform .25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.05);
+    }
+    .s-card:hover { border-color: #bfdbfe; transform: translateY(-1px); }
+    .stage-row.active .s-card {
+      border-color: #2563eb;
+      box-shadow: 0 1px 3px rgba(37,99,235,.12), 0 8px 24px rgba(37,99,235,.18);
+    }
+    .stage-row.done .s-card { border-color: #bfdbfe; background: #eff6ff; }
+
+    .c-lbl {
+      font-size: 10px; font-weight: 600; letter-spacing: .07em;
+      text-transform: uppercase; color: #9ca3af; margin-bottom: 2px;
+      transition: color .3s;
+    }
+    .stage-row.active .c-lbl { color: #2563eb; }
+    .stage-row.done   .c-lbl { color: #93c5fd; }
+
+    /* Title + description revealed on activation */
+    .c-title {
+      font-size: 15px; font-weight: 600; color: #111827; line-height: 1.3;
+      max-height: 0; overflow: hidden; opacity: 0; margin-top: 0;
+      transition: max-height .45s cubic-bezier(.22,1,.36,1), opacity .35s, margin .35s;
+    }
+    .c-desc {
+      font-size: 13px; font-weight: 400; color: #6b7280; line-height: 1.6;
+      max-height: 0; overflow: hidden; opacity: 0; margin-top: 0;
+      transition: max-height .45s cubic-bezier(.22,1,.36,1), opacity .35s, margin .35s;
+    }
+    .stage-row.active .c-title,
+    .stage-row.done   .c-title { max-height: 40px;  opacity: 1; margin-top: 3px; }
+    .stage-row.active .c-desc,
+    .stage-row.done   .c-desc  { max-height: 170px; opacity: 1; margin-top: 4px; }
+
+    /* ── Founder's role block (revealed alongside the description) ── */
+    .c-role-wrap {
+      max-height: 0; overflow: hidden; opacity: 0; margin-top: 0;
+      transition: max-height .45s cubic-bezier(.22,1,.36,1), opacity .35s, margin .35s;
+    }
+    .stage-row.active .c-role-wrap,
+    .stage-row.done   .c-role-wrap { max-height: 150px; opacity: 1; margin-top: 8px; }
+
+    .c-role-label {
+      font-size: 10px; font-weight: 600; letter-spacing: .07em;
+      text-transform: uppercase; color: #2563eb; margin-bottom: 3px;
+    }
+    .c-role-text {
+      font-size: 13px; font-weight: 400; color: #374151; line-height: 1.6;
+      padding-left: 10px; border-left: 2px solid #bfdbfe;
+    }
+
+    /* ── Nav ─────────────────────────────────────────── */
+    .nav-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; padding: 8px 0 12px;
+    }
+    .nav-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 1.5px solid #e5e7eb; background: #ffffff;
+      color: #374151; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .2s, color .2s;
+    }
+    .nav-btn:hover:not([disabled]) { border-color: #2563eb; color: #2563eb; }
+    .nav-btn[disabled] { opacity: .3; cursor: default; }
+    .nav-lbl {
+      font-size: 12px; font-weight: 500; color: #9ca3af;
+      min-width: 100px; text-align: center;
+    }
+
+    /* ── Closing note ──────────────────────────────────── */
+    .closing-note {
+      font-size: 12px; line-height: 1.6; color: #9ca3af;
+      text-align: center; max-width: 420px; margin: 0 auto 24px;
+    }
+  
+  /* ── Launch button ── */
+  .launch-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+  }
+
+  .launch-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: #9ca3af;
+    background: none;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 50px;
+    padding: 5px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+  }
+
+  .launch-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+  }
+
+  .launch-icon {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">
+  Stages of team development — click each stage to reveal details and the founder's role
+</h2>
+
+<div id="pw">
+  <!-- ── Launch button ──────────────────────────────────────────────────────
+       Update the href below once the file is hosted for the Leadership
+       Pathway build.
+       ───────────────────────────────────────────────────────────────────── -->
+  <div class="launch-bar">
+    <a class="launch-btn"
+       href="timeline-team-development.html?standalone=true"
+       target="_blank"
+       rel="noopener noreferrer">
+      <svg class="launch-icon" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M8 1h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M11 1L6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      Open in new window
+    </a>
+  </div>
+
+  <div class="stage-counter" id="sc">Stage 1 of 4</div>
+
+  <div class="timeline" id="tl">
+    <div class="tl-fill" id="fill"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn" id="bprev" disabled>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <span class="nav-lbl" id="nlbl">Forming</span>
+    <button class="nav-btn" id="bnext">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <p class="closing-note">Most startup teams are typically found somewhere between Forming and Storming.</p>
+</div>
+
+<script>
+  // Hide the launch button when the page is opened in a new window.
+  // The launch button link appends ?standalone=true to the URL, which
+  // triggers this check. Remove or change the parameter name below if needed.
+  if (new URLSearchParams(window.location.search).get('standalone') === 'true') {
+    document.querySelector('.launch-bar').style.display = 'none';
+  }
+
+  const STAGES = [
+    {
+      name: 'Forming', lbl: 'Stage 1', side: 'right',
+      desc: 'Team members are new to each other or to the work. People are polite, cautious, and looking to the founder for direction. Expectations are unclear, but conflict is rare because people are still figuring out the landscape.',
+      role: 'Provide clarity. Define expectations, roles, and norms explicitly. Do not assume people know how you work or what good looks like.',
+      icon: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 2"/></svg>'
+    },
+    {
+      name: 'Storming', lbl: 'Stage 2', side: 'left',
+      desc: 'As the team gets more comfortable, tension emerges. Competing ideas, unclear ownership, and interpersonal friction create conflict. This stage can be uncomfortable, but it is essential. Teams that avoid storming tend to produce mediocre results, because nobody is willing to challenge anything.',
+      role: 'Create structure for productive disagreement. Model directness. Do not shut down conflict; redirect it toward the problem, not the person.',
+      icon: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6.5 1L2 6.5h3L4.5 11 9 5H6L6.5 1z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>'
+    },
+    {
+      name: 'Norming', lbl: 'Stage 3', side: 'right',
+      desc: 'The team begins to establish shared ways of working. Trust is building. People are clearer on their roles and more willing to give and receive feedback. The work starts to flow more naturally.',
+      role: 'Reinforce the norms that are working. Give the team more ownership. Step back from operational detail where you can.',
+      icon: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4.5h8M2 7.5h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    },
+    {
+      name: 'Performing', lbl: 'Stage 4', side: 'left',
+      desc: 'The team operates with high trust, clear accountability, and strong results. People problem-solve without needing the founder to facilitate every decision. Conflict is handled effectively and directly.',
+      role: 'Focus on strategy and vision. Protect the conditions that got you here. Hire and develop in ways that sustain the culture.',
+      icon: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1l1.4 3.3L11 5l-2.7 2.2.8 3.5L6 8.8 2.9 10.7l.8-3.5L1 5l3.6-.7L6 1z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>'
+    }
+  ];
+
+  let current = 0;
+
+  function buildTimeline() {
+    const tl = document.getElementById('tl');
+
+    STAGES.forEach((s, i) => {
+      const row    = document.createElement('div');
+      row.className = `stage-row ${s.side}`;
+      row.id        = `row-${i}`;
+
+      const spacer = document.createElement('div'); spacer.className = 'stage-spacer';
+      const c1     = document.createElement('div'); c1.className = 's-conn';
+      const c2     = document.createElement('div'); c2.className = 's-conn';
+
+      const node    = document.createElement('div');
+      node.className = 's-node';
+      node.innerHTML = s.icon;
+      node.addEventListener('click', () => go(i));
+
+      const card    = document.createElement('div');
+      card.className = 's-card';
+      card.addEventListener('click', () => go(i));
+      card.innerHTML = `
+        <div class="c-lbl">${s.lbl}</div>
+        <div class="c-title">${s.name}</div>
+        <div class="c-desc">${s.desc}</div>
+        <div class="c-role-wrap">
+          <div class="c-role-label">Founder's role</div>
+          <div class="c-role-text">${s.role}</div>
+        </div>
+      `;
+
+      row.append(spacer, c1, node, c2, card);
+      tl.appendChild(row);
+    });
+  }
+
+  function go(i) {
+    current = i;
+    render();
+  }
+
+  function render() {
+    STAGES.forEach((_, i) => {
+      const row = document.getElementById(`row-${i}`);
+      row.classList.toggle('active', i === current);
+      row.classList.toggle('done',   i < current);
+    });
+
+    // Fill bar
+    const allNodes = document.querySelectorAll('.s-node');
+    if (allNodes.length) {
+      const tl     = document.getElementById('tl');
+      const tlTop  = tl.getBoundingClientRect().top;
+      const firstR = allNodes[0].getBoundingClientRect();
+      const curR   = allNodes[current].getBoundingClientRect();
+      const startY = firstR.top - tlTop + firstR.height / 2;
+      const endY   = curR.top  - tlTop + curR.height  / 2;
+      const fill   = document.getElementById('fill');
+      fill.style.top    = startY + 'px';
+      fill.style.height = Math.max(0, endY - startY) + 'px';
+    }
+
+    document.getElementById('sc').textContent  = `Stage ${current + 1} of ${STAGES.length}`;
+    document.getElementById('nlbl').textContent = STAGES[current].name;
+    document.getElementById('bprev').disabled   = current === 0;
+    document.getElementById('bnext').disabled   = current === STAGES.length - 1;
+  }
+
+  function applyLayout() {
+    document.getElementById('pw').classList.toggle('is-mobile', document.getElementById('pw').offsetWidth < 480);
+  }
+
+  document.getElementById('bprev').addEventListener('click', () => {
+    if (current > 0) { current--; render(); }
+  });
+  document.getElementById('bnext').addEventListener('click', () => {
+    if (current < STAGES.length - 1) { current++; render(); }
+  });
+
+  buildTimeline();
+  requestAnimationFrame(() => requestAnimationFrame(render));
+  window.addEventListener('resize', () => { applyLayout(); render(); });
+  applyLayout();
+</script>
+</body>
+</html>
